@@ -1,6 +1,6 @@
 {
   "name": "Major Freight Courier",
-  "description": "B2B Logistics Platform",
+  "description": "Enterprise freight forwarding, global multi-modal logistics, and end-to-end manifest tracking.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
