@@ -27,6 +27,7 @@ export interface Shipment {
   current_status: ShipmentStatus | string;
   package_received_img?: string;
   proof_of_delivery_img?: string;
+  estimated_delivery?: string;
   created_at: string;
   updated_at: string;
 }

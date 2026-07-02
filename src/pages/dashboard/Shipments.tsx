@@ -68,7 +68,7 @@ export const Shipments = () => {
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Shipments
             </button>
             <h2 className="text-2xl font-black tracking-tight text-gray-900">{selectedShipment.tracking_id}</h2>
-            <p className="text-sm text-gray-500 mt-1">Sender: {selectedShipment.sender_name}</p>
+            <p className="text-sm text-gray-500 mt-1">Sender: {selectedShipment.sender_name} &bull; Est. Delivery: <span className="text-blue-600 font-mono font-semibold">{selectedShipment.estimated_delivery || 'Pending'}</span></p>
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-xs font-bold tracking-widest uppercase text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-sm">

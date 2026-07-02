@@ -31,7 +31,7 @@ export const Overview = () => {
   const handleQuickTrack = (e: React.FormEvent) => {
     e.preventDefault();
     if (quickTrackId.trim()) {
-      navigate(`/track?id=${encodeURIComponent(quickTrackId.trim())}`);
+      navigate(`/dashboard/track?id=${encodeURIComponent(quickTrackId.trim())}`);
     }
   };
 

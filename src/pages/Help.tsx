@@ -30,7 +30,7 @@ export const Help = () => {
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Email Support</h3>
             <p className="text-gray-500 mb-4 text-sm">Open a ticket for complex logistics issues or claims.</p>
-            <a href="#" className="text-blue-600 font-medium text-sm hover:underline">support@mfcglobal.com</a>
+            <a href="mailto:support@majorfreightcourier.online" className="text-blue-600 font-medium text-sm hover:underline">support@majorfreightcourier.online</a>
           </div>
           
           <div className="bg-white p-8 border border-gray-200 shadow-sm text-center rounded-sm">

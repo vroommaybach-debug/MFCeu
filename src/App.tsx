@@ -21,6 +21,7 @@ import { Overview } from './pages/dashboard/Overview';
 import { Shipments } from './pages/dashboard/Shipments';
 import { Addresses } from './pages/dashboard/Addresses';
 import { Support } from './pages/dashboard/Support';
+import { DashboardTrack } from './pages/dashboard/DashboardTrack';
 
 import { Documents } from './pages/dashboard/Documents';
 import { Billing } from './pages/dashboard/Billing';
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="support" element={<Support />} />
           <Route path="documents" element={<Documents />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="track" element={<DashboardTrack />} />
         </Route>
 
         <Route path="/admin" element={<FxAdmin />} />

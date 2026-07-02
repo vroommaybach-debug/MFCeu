@@ -194,7 +194,7 @@ export const FxAdmin = () => {
                   setSelectedShipment({
                     id: '', user_id: 'local', tracking_id: '', recipient_name: '', recipient_address: '', 
                     sender_name: '', sender_address: '', carrier_name: 'MFC Direct', current_status: 'Manifest Created', 
-                    weight_kg: 0, content_description: '', created_at: '', updated_at: ''
+                    weight_kg: 0, content_description: '', estimated_delivery: '', created_at: '', updated_at: ''
                   });
                   setIsAdding(true);
                   setIsEditing(false);
@@ -253,6 +253,10 @@ export const FxAdmin = () => {
                       <label className="block text-xs uppercase text-gray-500 mb-1">Consignee Address</label>
                       <input type="text" value={selectedShipment.recipient_address} onChange={(e) => setSelectedShipment({...selectedShipment, recipient_address: e.target.value})} className="w-full bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:border-blue-500 outline-none rounded-sm" />
                     </div>
+                    <div>
+                      <label className="block text-xs uppercase text-gray-500 mb-1">Estimated Delivery Date</label>
+                      <input type="text" placeholder="e.g. July 15, 2026 or Pending" value={selectedShipment.estimated_delivery || ''} onChange={(e) => setSelectedShipment({...selectedShipment, estimated_delivery: e.target.value})} className="w-full bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:border-blue-500 outline-none rounded-sm" />
+                    </div>
                   </div>
                 </form>
               ) : selectedShipment ? (
@@ -260,7 +264,7 @@ export const FxAdmin = () => {
                   <div className="flex items-start justify-between mb-8 border-b border-gray-700 pb-4">
                     <div>
                       <h2 className="text-2xl font-mono font-bold tracking-tight text-white mb-1">{selectedShipment.tracking_id}</h2>
-                      <p className="text-sm text-gray-400">Master Record View</p>
+                      <p className="text-sm text-gray-400">Master Record View &bull; Est. Delivery: <span className="text-blue-400 font-mono font-semibold">{selectedShipment.estimated_delivery || 'Not Set'}</span></p>
                     </div>
                     <div className="flex space-x-2">
                       <button onClick={() => setIsEditing(true)} className="p-2 bg-gray-700 hover:bg-gray-600 rounded-sm transition-colors text-white" title="Edit Master Record"><PenTool className="h-4 w-4" /></button>

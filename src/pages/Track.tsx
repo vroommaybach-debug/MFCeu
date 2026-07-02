@@ -144,7 +144,7 @@ export const Track = () => {
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 border-b border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-6 sm:p-8 border-b border-gray-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <div>
                 <div className="flex items-start">
                   <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
@@ -161,6 +161,15 @@ export const Track = () => {
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">To</p>
                     <p className="text-sm font-bold text-gray-900">{shipment.recipient_name}</p>
                     <p className="text-sm text-gray-500 mt-1 whitespace-pre-line">{shipment.recipient_address}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-start">
+                  <Clock className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Est. Delivery</p>
+                    <p className="text-sm font-bold text-blue-600">{shipment.estimated_delivery || 'Scheduled / Pending'}</p>
                   </div>
                 </div>
               </div>
