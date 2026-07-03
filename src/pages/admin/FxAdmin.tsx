@@ -4,6 +4,7 @@ import { Package, Plus, Search, Trash2, PenTool, ArrowLeft, ArrowRight, Settings
 import { Link, useNavigate } from 'react-router-dom';
 import { mockShipments, mockTrackingEvents } from '../../lib/mock-data';
 import { Shipment, TrackingEvent } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 export const FxAdmin = () => {
   const navigate = useNavigate();
@@ -13,16 +14,64 @@ export const FxAdmin = () => {
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isCloudConnected, setIsCloudConnected] = useState(false);
+  const [isDbLoading, setIsDbLoading] = useState(false);
 
   // Load from local storage or mocks
   useEffect(() => {
-    const saved = localStorage.getItem('mfc_shipments');
-    const allShipments = saved ? JSON.parse(saved) : mockShipments;
-    setShipments(allShipments);
+    const loadData = async () => {
+      setIsDbLoading(true);
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL) {
+          // Fetch shipments
+          const { data: supabaseShipments, error: shErr } = await supabase
+            .from('shipments')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    const savedEvents = localStorage.getItem('mfc_tracking_events');
-    const allEvents = savedEvents ? JSON.parse(savedEvents) : mockTrackingEvents;
-    setEvents(allEvents);
+          // Fetch tracking events
+          const { data: supabaseEvents, error: evErr } = await supabase
+            .from('tracking_events')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+          if (supabaseShipments && supabaseShipments.length > 0) {
+            setShipments(supabaseShipments);
+            setIsCloudConnected(true);
+            localStorage.setItem('mfc_shipments', JSON.stringify(supabaseShipments));
+
+            // Group tracking events by shipment_id
+            const groupedEvents: Record<string, TrackingEvent[]> = {};
+            if (supabaseEvents) {
+              supabaseEvents.forEach(ev => {
+                if (!groupedEvents[ev.shipment_id]) {
+                  groupedEvents[ev.shipment_id] = [];
+                }
+                groupedEvents[ev.shipment_id].unshift(ev);
+              });
+            }
+            setEvents(groupedEvents);
+            localStorage.setItem('mfc_tracking_events', JSON.stringify(groupedEvents));
+            setIsDbLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase load failed in admin console, falling back to local state", err);
+      }
+
+      // Local fallback
+      const saved = localStorage.getItem('mfc_shipments');
+      const allShipments = saved ? JSON.parse(saved) : mockShipments;
+      setShipments(allShipments);
+
+      const savedEvents = localStorage.getItem('mfc_tracking_events');
+      const allEvents = savedEvents ? JSON.parse(savedEvents) : mockTrackingEvents;
+      setEvents(allEvents);
+      setIsDbLoading(false);
+    };
+
+    loadData();
   }, []);
 
   const [activeTab, setActiveTab] = useState<'shipments' | 'metrics'>('shipments');
@@ -49,8 +98,109 @@ export const FxAdmin = () => {
     localStorage.setItem('mfc_metrics', JSON.stringify(newMetrics));
   };
 
+  // Push all local shipments/mocks to Supabase
+  const handlePushToCloud = async () => {
+    setIsDbLoading(true);
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user ? user.id : null;
+
+        // Fetch existing shipments
+        const { data: existing } = await supabase.from('shipments').select('tracking_id');
+        const existingTrackIds = new Set(existing?.map(s => s.tracking_id) || []);
+
+        const shipmentsToInsert = shipments
+          .filter(s => !existingTrackIds.has(s.tracking_id))
+          .map(s => ({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            tracking_id: s.tracking_id,
+            sender_name: s.sender_name,
+            sender_address: s.sender_address,
+            recipient_name: s.recipient_name,
+            recipient_address: s.recipient_address,
+            carrier_name: s.carrier_name,
+            current_status: s.current_status,
+            weight_kg: s.weight_kg,
+            estimated_delivery: s.estimated_delivery || 'Scheduled / Pending',
+            created_at: s.created_at || new Date().toISOString(),
+            updated_at: s.updated_at || new Date().toISOString()
+          }));
+
+        if (shipmentsToInsert.length > 0) {
+          const { data: inserted, error: insertErr } = await supabase
+            .from('shipments')
+            .insert(shipmentsToInsert)
+            .select();
+
+          if (inserted) {
+            const eventsToInsert: any[] = [];
+            inserted.forEach(newShip => {
+              // Find matching original events
+              const originalShip = shipments.find(s => s.tracking_id === newShip.tracking_id);
+              if (originalShip) {
+                const evs = events[originalShip.id] || [];
+                evs.forEach(ev => {
+                  eventsToInsert.push({
+                    id: crypto.randomUUID(),
+                    shipment_id: newShip.id,
+                    status: ev.status,
+                    location: ev.location,
+                    checkpoint_notes: ev.checkpoint_notes || null,
+                    created_at: ev.created_at || new Date().toISOString()
+                  });
+                });
+              }
+            });
+
+            if (eventsToInsert.length > 0) {
+              await supabase.from('tracking_events').insert(eventsToInsert);
+            }
+            alert(`Successfully pushed ${shipmentsToInsert.length} shipments and their tracking events to Supabase!`);
+          }
+        } else {
+          alert("All current shipments are already synced to Supabase!");
+        }
+
+        // Reload from cloud
+        const { data: supabaseShipments } = await supabase
+          .from('shipments')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        const { data: supabaseEvents } = await supabase
+          .from('tracking_events')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (supabaseShipments) {
+          setShipments(supabaseShipments);
+          const groupedEvents: Record<string, TrackingEvent[]> = {};
+          if (supabaseEvents) {
+            supabaseEvents.forEach(ev => {
+              if (!groupedEvents[ev.shipment_id]) {
+                groupedEvents[ev.shipment_id] = [];
+              }
+              groupedEvents[ev.shipment_id].unshift(ev);
+            });
+          }
+          setEvents(groupedEvents);
+          localStorage.setItem('mfc_shipments', JSON.stringify(supabaseShipments));
+          localStorage.setItem('mfc_tracking_events', JSON.stringify(groupedEvents));
+          setIsCloudConnected(true);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to sync to Supabase. Check console logs.");
+    } finally {
+      setIsDbLoading(false);
+    }
+  };
+
   // Generate US/UK Dummy Tracking Info
-  const generateDummyTracking = (type: 'US' | 'UK', shipmentId: string) => {
+  const generateDummyTracking = async (type: 'US' | 'UK', shipmentId: string) => {
     const currentEvents = events[shipmentId] || [];
     let location = '';
     
@@ -70,41 +220,113 @@ export const FxAdmin = () => {
       created_at: new Date().toISOString()
     };
 
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase.from('tracking_events').insert(newEvent);
+        if (error) console.error("Error saving event to Supabase:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase event saving failed, writing locally", err);
+    }
+
     saveEvents({ ...events, [shipmentId]: [newEvent, ...currentEvents] });
   };
 
-  const handleUpdateShipment = (e: React.FormEvent) => {
+  const handleUpdateShipment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedShipment) return;
+
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase
+          .from('shipments')
+          .update({
+            tracking_id: selectedShipment.tracking_id,
+            current_status: selectedShipment.current_status,
+            sender_name: selectedShipment.sender_name,
+            sender_address: selectedShipment.sender_address,
+            recipient_name: selectedShipment.recipient_name,
+            recipient_address: selectedShipment.recipient_address,
+            carrier_name: selectedShipment.carrier_name,
+            estimated_delivery: selectedShipment.estimated_delivery,
+            weight_kg: selectedShipment.weight_kg,
+            content_description: selectedShipment.content_description,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedShipment.id);
+        if (error) console.error("Error updating shipment on Supabase:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase shipment update failed, writing locally", err);
+    }
+
     const updated = shipments.map(s => s.id === selectedShipment.id ? selectedShipment : s);
     saveShipments(updated);
     setIsEditing(false);
   };
 
-  const handleCreateShipment = (e: React.FormEvent) => {
+  const handleCreateShipment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedShipment) return;
     
+    const newId = crypto.randomUUID();
+    let loggedInUserId: string | null = null;
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) loggedInUserId = user.id;
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+
     const newEntry: Shipment = {
       ...selectedShipment,
-      id: crypto.randomUUID(),
-      tracking_id: `MFC-${Math.floor(Math.random() * 1000000)}`,
+      id: newId,
+      user_id: loggedInUserId || 'local',
+      tracking_id: selectedShipment.tracking_id || `MFC-${Math.floor(Math.random() * 1000000)}`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase.from('shipments').insert(newEntry);
+        if (error) console.error("Error inserting shipment on Supabase:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase shipment insertion failed, writing locally", err);
+    }
+
     saveShipments([newEntry, ...shipments]);
     setIsAdding(false);
   };
 
-  const deleteShipment = (id: string) => {
+  const deleteShipment = async (id: string) => {
     if(confirm('Delete this shipment entirely?')) {
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL) {
+          const { error } = await supabase.from('shipments').delete().eq('id', id);
+          if (error) console.error("Error deleting shipment on Supabase:", error);
+        }
+      } catch (err) {
+        console.warn("Supabase shipment deletion failed, writing locally", err);
+      }
       saveShipments(shipments.filter(s => s.id !== id));
       setSelectedShipment(null);
     }
   };
 
-  const deleteEvent = (shipmentId: string, eventId: string) => {
+  const deleteEvent = async (shipmentId: string, eventId: string) => {
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase.from('tracking_events').delete().eq('id', eventId);
+        if (error) console.error("Error deleting event from Supabase:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase event deletion failed", err);
+    }
+
     const shipmentEvents = events[shipmentId] || [];
     saveEvents({
       ...events,
@@ -112,7 +334,7 @@ export const FxAdmin = () => {
     });
   };
 
-  const addEvent = (shipmentId: string) => {
+  const addEvent = async (shipmentId: string) => {
     const shipmentEvents = events[shipmentId] || [];
     const newEvent: TrackingEvent = {
       id: crypto.randomUUID(),
@@ -121,13 +343,35 @@ export const FxAdmin = () => {
       location: 'Custom Location',
       created_at: new Date().toISOString()
     };
+
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase.from('tracking_events').insert(newEvent);
+        if (error) console.error("Error inserting event on Supabase:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase event insertion failed", err);
+    }
+
     saveEvents({
       ...events,
       [shipmentId]: [newEvent, ...shipmentEvents]
     });
   };
 
-  const updateEvent = (shipmentId: string, eventId: string, field: keyof TrackingEvent, value: string) => {
+  const updateEvent = async (shipmentId: string, eventId: string, field: keyof TrackingEvent, value: string) => {
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        const { error } = await supabase
+          .from('tracking_events')
+          .update({ [field]: value })
+          .eq('id', eventId);
+        if (error) console.error("Error updating event field:", error);
+      }
+    } catch (err) {
+      console.warn("Supabase event update failed", err);
+    }
+
     const shipmentEvents = events[shipmentId] || [];
     saveEvents({
       ...events,
@@ -138,29 +382,71 @@ export const FxAdmin = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans">
       {/* Admin Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-blue-500" />
-            <h1 className="text-xl font-black tracking-widest uppercase">FX-Admin<span className="text-blue-500">_Console</span></h1>
+      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-0 z-50">
+        <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-blue-500" />
+              <h1 className="text-xl font-black tracking-widest uppercase">FX-Admin<span className="text-blue-500">_Console</span></h1>
+            </div>
+          </div>
+          {/* Mobile Badge */}
+          <div className="sm:hidden">
+            {isCloudConnected ? (
+              <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">● Cloud Active</span>
+            ) : (
+              <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">● Local Sandbox</span>
+            )}
           </div>
         </div>
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => setActiveTab('shipments')} 
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-sm transition-colors ${activeTab === 'shipments' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Data Control
-          </button>
-          <button 
-            onClick={() => setActiveTab('metrics')} 
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-sm transition-colors ${activeTab === 'metrics' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            Metrics & Balance
-          </button>
+
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+          {/* Desktop Badge & Sync Button */}
+          <div className="hidden sm:flex items-center gap-3">
+            {isCloudConnected ? (
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">● Cloud Active</span>
+                <button 
+                  onClick={handlePushToCloud}
+                  disabled={isDbLoading}
+                  className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:border-blue-500/50 text-[10px] font-black uppercase tracking-widest rounded-sm transition-all"
+                >
+                  {isDbLoading ? 'Syncing...' : 'Sync to Cloud'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">● Local Sandbox</span>
+                {import.meta.env.VITE_SUPABASE_URL && (
+                  <button 
+                    onClick={handlePushToCloud}
+                    disabled={isDbLoading}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-sm transition-all"
+                  >
+                    Connect & Push to Cloud
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setActiveTab('shipments')} 
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-sm transition-colors ${activeTab === 'shipments' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              Data Control
+            </button>
+            <button 
+              onClick={() => setActiveTab('metrics')} 
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-sm transition-colors ${activeTab === 'metrics' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              Metrics & Balance
+            </button>
+          </div>
         </div>
       </div>
 

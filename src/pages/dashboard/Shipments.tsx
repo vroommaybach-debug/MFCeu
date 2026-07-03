@@ -34,11 +34,64 @@ export const Shipments = () => {
             setShipments(data);
             localStorage.setItem('mfc_shipments', JSON.stringify(data));
             return;
+          } else if (user) {
+            // Seed mock shipments to Supabase for this user
+            const seededShipments = mockShipments.map(s => ({
+              id: crypto.randomUUID(),
+              user_id: user.id,
+              tracking_id: s.tracking_id,
+              sender_name: s.sender_name,
+              sender_address: s.sender_address,
+              recipient_name: s.recipient_name,
+              recipient_address: s.recipient_address,
+              carrier_name: s.carrier_name,
+              current_status: s.current_status,
+              weight_kg: s.weight_kg,
+              estimated_delivery: s.estimated_delivery || 'Scheduled / Pending',
+              created_at: s.created_at,
+              updated_at: s.updated_at
+            }));
+
+            // Insert shipments
+            const { data: insertedShipments, error: insertErr } = await supabase
+              .from('shipments')
+              .insert(seededShipments)
+              .select();
+
+            if (insertedShipments && insertedShipments.length > 0) {
+              // Now seed tracking events for each mapped shipment
+              const eventsToInsert: any[] = [];
+              insertedShipments.forEach((newShip: any) => {
+                // Find matching mock events
+                const mockIdx = mockShipments.findIndex(s => s.tracking_id === newShip.tracking_id);
+                if (mockIdx !== -1) {
+                  const mockShipId = mockShipments[mockIdx].id;
+                  const mockEvs = mockTrackingEvents[mockShipId] || [];
+                  mockEvs.forEach(ev => {
+                    eventsToInsert.push({
+                      id: crypto.randomUUID(),
+                      shipment_id: newShip.id,
+                      status: ev.status,
+                      location: ev.location,
+                      checkpoint_notes: ev.checkpoint_notes || null,
+                      created_at: ev.created_at
+                    });
+                  });
+                }
+              });
+
+              if (eventsToInsert.length > 0) {
+                await supabase.from('tracking_events').insert(eventsToInsert);
+              }
+
+              setShipments(insertedShipments);
+              localStorage.setItem('mfc_shipments', JSON.stringify(insertedShipments));
+            }
           }
         }
       }
     } catch (e) {
-      console.warn("Supabase not fully setup, using local shipments");
+      console.warn("Supabase not fully setup, using local shipments", e);
     }
   };
 

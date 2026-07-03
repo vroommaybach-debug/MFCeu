@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { mockShipments, mockProfile } from '../../lib/mock-data';
 import { motion } from 'motion/react';
 import { Shipment } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 export const Overview = () => {
   const navigate = useNavigate();
@@ -21,9 +22,35 @@ export const Overview = () => {
   const [quickTrackId, setQuickTrackId] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('mfc_shipments');
-    const allShipments = saved ? JSON.parse(saved) : mockShipments;
-    setRecentShipments(allShipments.slice(0, 4));
+    const fetchRecentShipments = async () => {
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data, error } = await supabase
+              .from('shipments')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(4);
+            
+            if (data && data.length > 0) {
+              setRecentShipments(data);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Error fetching recent shipments from Supabase", err);
+      }
+
+      // Fallback
+      const saved = localStorage.getItem('mfc_shipments');
+      const allShipments = saved ? JSON.parse(saved) : mockShipments;
+      setRecentShipments(allShipments.slice(0, 4));
+    };
+
+    fetchRecentShipments();
   }, []);
 
   const lastName = mockProfile.full_name.split(' ').pop() || mockProfile.full_name;
