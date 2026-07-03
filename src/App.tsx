@@ -25,7 +25,6 @@ import { DashboardTrack } from './pages/dashboard/DashboardTrack';
 
 import { Documents } from './pages/dashboard/Documents';
 import { Billing } from './pages/dashboard/Billing';
-import { FxAdmin } from './pages/admin/FxAdmin';
 
 export default function App() {
   return (
@@ -57,7 +56,7 @@ export default function App() {
           <Route path="track" element={<DashboardTrack />} />
         </Route>
 
-        <Route path="/admin" element={<FxAdmin />} />
+        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
         
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

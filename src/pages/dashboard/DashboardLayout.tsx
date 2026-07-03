@@ -6,8 +6,17 @@ import { mockProfile } from '../../lib/mock-data';
 
 export const DashboardLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [editMode, setEditMode] = useState(() => {
+    return localStorage.getItem('mfc_admin_mode') === 'true';
+  });
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleToggleEditMode = () => {
+    const nextMode = !editMode;
+    setEditMode(nextMode);
+    localStorage.setItem('mfc_admin_mode', String(nextMode));
+  };
 
   const navItems = [
     { name: 'Dashboard Overview', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -87,17 +96,29 @@ export const DashboardLayout = () => {
               );
             })}
 
-            {/* Separator & FX-Admin Link */}
+            {/* Admin Controls Toggle */}
             <div className="pt-4 mt-4 border-t border-gray-200">
-              <span className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Internal Systems</span>
-              <Link
-                to="/admin"
-                className="group flex items-center px-3 py-3 text-sm font-semibold text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors rounded-sm border border-dashed border-amber-300 bg-amber-50/30"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <span className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Sandbox Controls</span>
+              <button
+                onClick={handleToggleEditMode}
+                className={cn(
+                  "w-full group flex items-center justify-between px-3 py-3 text-sm font-bold transition-all rounded-sm border border-dashed",
+                  editMode 
+                    ? "bg-amber-500/10 text-amber-600 border-amber-500 hover:bg-amber-500/20" 
+                    : "bg-gray-50 text-gray-500 border-gray-300 hover:bg-gray-100"
+                )}
               >
-                <ShieldAlert className="mr-3 h-5 w-5 text-amber-500" />
-                FX-Admin Console
-              </Link>
+                <div className="flex items-center">
+                  <ShieldAlert className={cn("mr-3 h-5 w-5", editMode ? "text-amber-500 animate-pulse" : "text-gray-400")} />
+                  <span>Admin Edit Mode</span>
+                </div>
+                <span className={cn(
+                  "px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full",
+                  editMode ? "bg-amber-500 text-white animate-pulse" : "bg-gray-200 text-gray-600"
+                )}>
+                  {editMode ? 'ON' : 'OFF'}
+                </span>
+              </button>
             </div>
           </nav>
         </div>
@@ -122,7 +143,7 @@ export const DashboardLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-0 overflow-hidden">
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none lg:pt-0 pt-16">
-          <Outlet />
+          <Outlet context={{ editMode, setEditMode }} />
         </main>
       </div>
     </div>
