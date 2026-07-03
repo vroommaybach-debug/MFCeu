@@ -15,7 +15,7 @@ export interface Profile {
 export interface Shipment {
   id: string;
   tracking_id: string;
-  user_id: string;
+  user_id?: string | null;
   carrier_name: CarrierName;
   carrier_tracking_link?: string;
   sender_name: string;
@@ -44,7 +44,7 @@ export interface TrackingEvent {
 
 export interface AddressTicket {
   id: string;
-  user_id: string;
+  user_id?: string | null;
   requested_region: string;
   status: 'pending' | 'allocated' | 'expired';
   allocated_address?: string;

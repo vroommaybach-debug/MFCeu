@@ -36,6 +36,20 @@ export const Overview = () => {
             setIsLoading(false);
             return;
           }
+        } else {
+          // Fetch all public/guest shipments if in sandbox/guest mode
+          const { data, error } = await supabase
+            .from('shipments')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (data) {
+            setAllShipments(data);
+            setRecentShipments(data.slice(0, 4));
+            localStorage.setItem('mfc_shipments', JSON.stringify(data));
+            setIsLoading(false);
+            return;
+          }
         }
       }
     } catch (err) {

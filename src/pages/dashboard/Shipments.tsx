@@ -65,6 +65,19 @@ export const Shipments = () => {
             setIsLoading(false);
             return;
           }
+        } else {
+          // If no logged in user but we have Supabase, we can fetch all public/sandbox shipments
+          const { data, error } = await supabase
+            .from('shipments')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (data) {
+            setShipments(data);
+            localStorage.setItem('mfc_shipments', JSON.stringify(data));
+            setIsLoading(false);
+            return;
+          }
         }
       }
     } catch (e) {
@@ -110,7 +123,7 @@ export const Shipments = () => {
 
       const seededShipments = mockShipments.map(s => ({
         id: crypto.randomUUID(),
-        user_id: userId || 'local',
+        user_id: userId || null,
         tracking_id: s.tracking_id,
         sender_name: s.sender_name,
         sender_address: s.sender_address,
@@ -124,11 +137,11 @@ export const Shipments = () => {
         updated_at: s.updated_at || new Date().toISOString()
       }));
 
-      if (import.meta.env.VITE_SUPABASE_URL && userId) {
-        // Insert to Supabase
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        // Upsert shipments to Supabase to handle existing tracking ID constraints cleanly
         const { data: insertedShipments, error: insertErr } = await supabase
           .from('shipments')
-          .insert(seededShipments)
+          .upsert(seededShipments, { onConflict: 'tracking_id' })
           .select();
 
         if (insertedShipments && insertedShipments.length > 0) {
@@ -151,6 +164,9 @@ export const Shipments = () => {
           });
 
           if (eventsToInsert.length > 0) {
+            // Delete old events for these exact shipments to prevent duplications
+            const shipmentIds = insertedShipments.map((s: any) => s.id);
+            await supabase.from('tracking_events').delete().in('shipment_id', shipmentIds);
             await supabase.from('tracking_events').insert(eventsToInsert);
           }
 
@@ -159,6 +175,8 @@ export const Shipments = () => {
           alert("Demo manifests successfully seeded to your database!");
           setIsLoading(false);
           return;
+        } else if (insertErr) {
+          console.error("Supabase seeding failed:", insertErr);
         }
       }
     } catch (err) {
@@ -190,6 +208,15 @@ export const Shipments = () => {
           
           if (error) {
             console.error("Supabase clear failed", error);
+          }
+        } else {
+          // If in guest/sandbox mode, clear all shipments where user_id is null
+          const { error } = await supabase
+            .from('shipments')
+            .delete()
+            .is('user_id', null);
+          if (error) {
+            console.error("Supabase clear guest shipments failed", error);
           }
         }
       }
@@ -230,7 +257,7 @@ export const Shipments = () => {
 
     const newShipment: Shipment = {
       id: newId,
-      user_id: userId || 'local',
+      user_id: userId || null,
       tracking_id: generatedId,
       sender_name: newSenderName,
       sender_address: newSenderAddress || 'MFC Dispatch Hub',
@@ -255,11 +282,14 @@ export const Shipments = () => {
     };
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL && userId) {
-        // Insert to Supabase
+      if (import.meta.env.VITE_SUPABASE_URL) {
+        // Insert to Supabase (supported for both guest and authenticated users)
         const { error: sErr } = await supabase.from('shipments').insert(newShipment);
         if (!sErr) {
-          await supabase.from('tracking_events').insert(initialEvent);
+          const { error: eErr } = await supabase.from('tracking_events').insert(initialEvent);
+          if (eErr) {
+            console.error("Supabase insert initial event failed:", eErr);
+          }
         } else {
           console.error("Supabase insert shipment failed:", sErr);
         }
