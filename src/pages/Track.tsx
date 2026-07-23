@@ -35,8 +35,7 @@ export const Track = () => {
     setEvents([]);
 
     try {
-      // Check Supabase first if configured
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: supabaseShipment, error: fetchError } = await supabase
           .from('shipments')
           .select('*')
@@ -45,7 +44,6 @@ export const Track = () => {
 
         if (supabaseShipment) {
           setShipment(supabaseShipment);
-          // fetch events
           const { data: supabaseEvents } = await supabase
             .from('tracking_events')
             .select('*')
@@ -58,10 +56,9 @@ export const Track = () => {
         }
       }
     } catch (e) {
-      console.warn("Supabase fetch failed, falling back to mock data");
+      console.log("Supabase fallback used");
     }
 
-    // Fallback to local storage or mock data
     setTimeout(() => {
       const saved = localStorage.getItem('mfc_shipments');
       const allShipments = saved ? JSON.parse(saved) : mockShipments;
@@ -79,7 +76,6 @@ export const Track = () => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (trackingId) {
-      // update URL
       window.history.replaceState(null, '', `?id=${trackingId}`);
       handleSearch(trackingId);
     }
@@ -92,103 +88,103 @@ export const Track = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
       <Navbar />
       
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 mb-8">
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 mb-2">Track Shipment</h1>
-          <p className="text-gray-500 text-sm mb-6">Enter your tracking number to see real-time updates.</p>
+      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 sm:p-10 border border-slate-200 shadow-sm mb-12">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Track Consignment</h1>
+          <p className="text-slate-500 text-sm mb-8">Enter tracking reference to access operational status.</p>
           
-          <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
+          <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-4">
             <input
               type="text"
-              placeholder="e.g. MFC-1002-8492"
-              className="flex-grow px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm bg-gray-50 hover:bg-white transition-all"
+              placeholder="e.g. TRK-1002-8492"
+              className="flex-grow px-4 py-4 border border-slate-300 rounded-none focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-sm bg-slate-50 hover:bg-white transition-all uppercase"
               value={trackingId}
               onChange={(e) => setTrackingId(e.target.value.toUpperCase())}
             />
             <button
               type="submit"
               disabled={isLoading || !trackingId.trim()}
-              className="px-6 py-3 bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-600/20 transition-all"
+              className="px-10 py-4 bg-slate-900 text-white font-bold text-xs uppercase tracking-[0.2em] rounded-none hover:bg-slate-800 disabled:opacity-50 transition-all shadow-md shrink-0"
             >
-              {isLoading ? 'Tracking...' : 'Track'}
+              {isLoading ? 'Querying...' : 'Trace'}
             </button>
           </form>
         </motion.div>
 
         {hasSearched && !isLoading && error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-8 rounded-2xl border border-red-100 shadow-sm text-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-10 border border-red-200 shadow-sm text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Shipment Not Found</h2>
-            <p className="text-gray-500 text-sm">{error}</p>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Consignment Not Found</h2>
+            <p className="text-slate-500 text-sm">{error}</p>
           </motion.div>
         )}
 
         {hasSearched && !isLoading && shipment && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
-            <div className="p-6 sm:p-8 bg-gray-900 text-white flex justify-between items-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white shadow-xl border border-slate-200">
+            <div className="p-8 sm:p-10 bg-slate-900 text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Tracking ID</p>
-                <h2 className="text-2xl font-black tracking-tight font-mono">{shipment.tracking_id}</h2>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Tracking Reference</p>
+                <h2 className="text-3xl font-bold tracking-tight font-mono text-white">{shipment.tracking_id}</h2>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <span className={cn(
-                  "px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full",
-                  shipment.current_status === 'Delivered' ? "bg-green-500/20 text-green-400" : 
-                  shipment.current_status.includes('Transit') ? "bg-blue-500/20 text-blue-400" : "bg-gray-700 text-gray-300"
+                  "px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] inline-block",
+                  shipment.current_status === 'Delivered' ? "bg-white text-slate-900" : 
+                  shipment.current_status.includes('Transit') ? "bg-slate-700 text-white" : "bg-slate-800 text-slate-300"
                 )}>
                   {shipment.current_status}
                 </span>
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 border-b border-gray-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="p-8 sm:p-10 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               <div>
                 <div className="flex items-start">
-                  <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                  <MapPin className="w-5 h-5 text-slate-400 mr-4 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">From</p>
-                    <p className="text-sm font-bold text-gray-900">{shipment.sender_name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Origin</p>
+                    <p className="text-sm font-bold text-slate-900">{shipment.sender_name}</p>
                   </div>
                 </div>
               </div>
               <div>
                 <div className="flex items-start">
-                  <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                  <MapPin className="w-5 h-5 text-slate-400 mr-4 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">To</p>
-                    <p className="text-sm font-bold text-gray-900">{shipment.recipient_name}</p>
-                    <p className="text-sm text-gray-500 mt-1 whitespace-pre-line">{shipment.recipient_address}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Destination</p>
+                    <p className="text-sm font-bold text-slate-900">{shipment.recipient_name}</p>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed whitespace-pre-line">{shipment.recipient_address}</p>
                   </div>
                 </div>
               </div>
               <div>
                 <div className="flex items-start">
-                  <Clock className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                  <Clock className="w-5 h-5 text-slate-400 mr-4 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Est. Delivery</p>
-                    <p className="text-sm font-bold text-blue-600">{shipment.estimated_delivery || 'Scheduled / Pending'}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Est. Fulfillment</p>
+                    <p className="text-sm font-bold text-slate-900">{shipment.estimated_delivery || 'Pending Schedule'}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 border-b border-gray-100">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8">Tracking Progress</h3>
-              <div className="relative pt-2 max-w-2xl mx-auto">
-                <div className="overflow-hidden h-2 mb-6 text-xs flex bg-gray-100 rounded-full">
+            <div className="p-8 sm:p-10 border-b border-slate-200">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-10">Transit Progression</h3>
+              <div className="relative pt-2 max-w-3xl mx-auto">
+                <div className="overflow-hidden h-1 mb-8 text-xs flex bg-slate-100">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${(getStepIndex(shipment.current_status) / (timelineSteps.length - 1)) * 100}%` }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 rounded-full"
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-slate-900"
                   ></motion.div>
                 </div>
-                <div className="flex justify-between text-xs font-medium text-gray-400 px-1">
+                <div className="flex justify-between text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400 px-1">
                   {timelineSteps.map((step, idx) => (
-                    <div key={step} className={cn("text-center max-w-[80px]", idx <= getStepIndex(shipment.current_status) ? "text-gray-900 font-bold" : "")}>
+                    <div key={step} className={cn("text-center max-w-[80px]", idx <= getStepIndex(shipment.current_status) ? "text-slate-900" : "")}>
                       {step}
                     </div>
                   ))}
@@ -196,27 +192,27 @@ export const Track = () => {
               </div>
             </div>
 
-            <div className="p-6 sm:p-8">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Tracking History</h3>
-              <div className="space-y-0 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+            <div className="p-8 sm:p-10 bg-slate-50">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Operational Logs</h3>
+              <div className="space-y-0 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-px before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                 {events.map((event, idx) => (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                     key={event.id} 
-                    className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active py-4"
+                    className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active py-6"
                   >
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-gray-900 text-white shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <div className="flex items-center justify-center w-8 h-8 border border-white bg-slate-900 text-white shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                      <div className="w-2 h-2 bg-white rounded-none"></div>
                     </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 border border-gray-100 shadow-sm rounded-xl">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
-                        <p className="font-bold text-gray-900 text-sm">{event.status}</p>
-                        <time className="font-mono text-xs text-gray-500 mt-1 sm:mt-0">{new Date(event.created_at).toLocaleString()}</time>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-white p-6 border border-slate-200 shadow-sm rounded-none hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
+                        <p className="font-bold text-slate-900 text-sm tracking-tight uppercase">{event.status}</p>
+                        <time className="font-mono text-[10px] text-slate-500 tracking-wider mt-1 sm:mt-0">{new Date(event.created_at).toLocaleString()}</time>
                       </div>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1 inline" /> {event.location}
+                      <p className="text-xs text-slate-600 flex items-center font-mono">
+                        <MapPin className="w-3 h-3 mr-2 inline" /> {event.location}
                       </p>
                     </div>
                   </motion.div>

@@ -11,37 +11,37 @@ export const Reset = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
-        <Link to="/" className="inline-block text-xl font-black tracking-tight uppercase text-gray-900">
+        <Link to="/" className="inline-block text-xl font-black tracking-tight uppercase text-slate-900">
           MAJOR Freight Courier
         </Link>
-        <h2 className="mt-6 text-3xl font-black tracking-tight text-gray-900">
+        <h2 className="mt-6 text-3xl font-black tracking-tight text-slate-900">
           Reset Gateway
         </h2>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 border border-gray-200 sm:px-10">
+        <div className="bg-white py-8 px-4 border border-slate-200 sm:px-10">
           {isSubmitted ? (
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-slate-600 mb-6">
                 If an account exists for that address, password reset instructions have been dispatched.
               </p>
-              <Link to="/login" className="text-sm font-bold tracking-widest uppercase text-gray-900 hover:underline">
+              <Link to="/login" className="text-sm font-bold tracking-widest uppercase text-slate-900 hover:underline">
                 Return to Sign In
               </Link>
             </div>
           ) : (
             <form className="space-y-6" onSubmit={handleReset}>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                   Email Address
                 </label>
                 <input
                   type="email"
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 font-mono focus:outline-none focus:ring-0 focus:border-gray-900 sm:text-sm transition-colors"
+                  className="appearance-none block w-full px-3 py-3 border border-slate-300 font-mono focus:outline-none focus:ring-0 focus:border-slate-900 sm:text-sm transition-colors"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -50,7 +50,7 @@ export const Reset = () => {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold tracking-widest uppercase text-white bg-gray-900 hover:bg-gray-800 focus:outline-none transition-all"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold tracking-widest uppercase text-white bg-slate-900 hover:bg-slate-800 focus:outline-none transition-all"
                 >
                   Request Reset
                 </button>
@@ -59,8 +59,8 @@ export const Reset = () => {
           )}
 
           {!isSubmitted && (
-            <div className="mt-8 text-center text-sm text-gray-500">
-              <Link to="/login" className="font-bold text-gray-900 hover:underline">
+            <div className="mt-8 text-center text-sm text-slate-500">
+              <Link to="/login" className="font-bold text-slate-900 hover:underline">
                 Return to Sign In
               </Link>
             </div>

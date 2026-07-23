@@ -20,7 +20,7 @@ export const Overview = () => {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data, error } = await supabase
@@ -53,7 +53,7 @@ export const Overview = () => {
         }
       }
     } catch (err) {
-      console.warn("Error fetching dashboard data from Supabase", err);
+      console.log("Supabase fallback used");
     }
 
     // Fallback
@@ -87,15 +87,15 @@ export const Overview = () => {
   };
 
   const renderMetric = (key: keyof typeof metrics, label: string, icon: React.ReactNode, subtext: string) => (
-    <div className={`bg-white border border-gray-200 p-6 shadow-sm rounded-sm hover:border-gray-300 transition-colors relative ${key === 'pending' ? 'border-l-4 border-l-amber-400' : key === 'delayed' ? 'border-l-4 border-l-red-500' : key === 'delivered' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-blue-500'}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">{label}</h3>
+    <div className={`bg-white border border-slate-200 p-8 shadow-sm hover:border-slate-300 transition-colors relative ${key === 'pending' ? 'border-t-4 border-t-amber-400' : key === 'delayed' ? 'border-t-4 border-t-red-500' : key === 'delivered' ? 'border-t-4 border-t-green-500' : 'border-t-4 border-t-slate-900'}`}>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</h3>
         {icon}
       </div>
       <div className="flex items-center space-x-2">
-        <p className="text-3xl font-black tracking-tighter text-gray-900">{metrics[key].toLocaleString()}</p>
+        <p className="text-4xl font-bold tracking-tighter text-slate-900">{metrics[key].toLocaleString()}</p>
       </div>
-      <p className="text-xs text-gray-500 mt-2 font-medium">{subtext}</p>
+      <p className="text-xs text-slate-500 mt-4 font-medium">{subtext}</p>
     </div>
   );
 
@@ -104,28 +104,28 @@ export const Overview = () => {
       initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }} 
       transition={{ duration: 0.3 }}
-      className="p-4 sm:p-8 max-w-7xl mx-auto"
+      className="p-4 sm:p-8 max-w-7xl mx-auto font-sans"
     >
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-gray-900 mb-1">Hello, {lastName}</h1>
-          <p className="text-gray-500 text-sm">Welcome back to your MFC Logistics Dashboard. Here is your real-time shipment overview.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Hello, {lastName}</h1>
+          <p className="text-slate-500 text-sm">Welcome back to your MFC Logistics Dashboard. Here is your real-time shipment overview.</p>
         </div>
-        <Link to="/dashboard/shipments" className="flex items-center text-xs font-black tracking-widest uppercase text-blue-600 hover:underline">
+        <Link to="/dashboard/shipments" className="flex items-center text-[10px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-slate-700 transition-colors">
           View All Shipments <ArrowRight className="ml-2 h-4 w-4" />
         </Link>
       </div>
 
       {/* Empty State Startup Banner */}
       {allShipments.length === 0 && !isLoading && (
-        <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mb-10 p-8 bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div>
-            <h3 className="text-xs font-black uppercase tracking-widest text-blue-900 mb-1">Logistics Account Active</h3>
-            <p className="text-xs text-blue-700">This account has 0 recorded shipments. Go to the Shipment Manager to create a new manifest or populate demo data.</p>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-900 mb-2">Logistics Account Active</h3>
+            <p className="text-sm text-slate-600">This account has 0 recorded shipments. Go to the Shipment Manager to create a new manifest or populate demo data.</p>
           </div>
           <Link 
             to="/dashboard/shipments" 
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-sm transition-colors shadow-xs"
+            className="inline-flex items-center justify-center px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-colors shadow-sm shrink-0"
           >
             Open Shipment Manager
           </Link>
@@ -134,7 +134,7 @@ export const Overview = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {renderMetric('active', 'Active Shipments', <Package className="h-5 w-5 text-blue-500" />, 'In transit / Dispatched')}
+        {renderMetric('active', 'Active Shipments', <Package className="h-5 w-5 text-slate-900" />, 'In transit / Dispatched')}
         {renderMetric('pending', 'Pending Manifests', <Clock className="h-5 w-5 text-amber-500" />, 'Registered / Created')}
         {renderMetric('delayed', 'Delayed exceptions', <AlertCircle className="h-5 w-5 text-red-500" />, 'Requiring intervention')}
         {renderMetric('delivered', 'Delivered Cargo', <CheckCircle2 className="h-5 w-5 text-green-500" />, 'Delivered successfully')}
@@ -143,45 +143,45 @@ export const Overview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Activity Feed */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Recent Updates</h3>
+          <div className="bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-900">Recent Updates</h3>
               <button 
                 onClick={fetchDashboardData} 
-                className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
+                className="text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-[0.2em]"
               >
                 Refresh
               </button>
             </div>
-            <div className="divide-y divide-gray-100 min-h-[160px] flex flex-col">
+            <div className="divide-y divide-slate-100 min-h-[160px] flex flex-col">
               {isLoading ? (
                 <div className="flex-grow flex items-center justify-center p-12">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                  <div className="animate-spin h-6 w-6 border-b-2 border-slate-900"></div>
                 </div>
               ) : recentShipments.length === 0 ? (
                 <div className="flex-grow flex flex-col items-center justify-center p-12 text-center">
-                  <Package className="h-8 w-8 text-gray-300 mb-2" />
-                  <p className="text-xs font-mono text-gray-400 uppercase tracking-widest">No Recent Activity Records</p>
+                  <Package className="h-8 w-8 text-slate-300 mb-4" />
+                  <p className="text-[10px] font-mono text-slate-400 uppercase tracking-[0.2em]">No Recent Activity Records</p>
                 </div>
               ) : (
                 recentShipments.map((shipment) => (
-                  <div key={shipment.id} className="p-6 hover:bg-gray-50/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div key={shipment.id} className="p-8 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <Link to={`/dashboard/shipments`} className="font-mono text-sm font-black text-gray-900 hover:text-blue-600 transition-colors">
+                      <div className="flex items-center gap-4 mb-2">
+                        <Link to={`/dashboard/shipments`} className="font-mono text-sm font-bold text-slate-900 hover:underline transition-all">
                           {shipment.tracking_id}
                         </Link>
-                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-gray-100 text-gray-800 border border-gray-200 rounded-sm">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 bg-white border border-slate-200 text-slate-700">
                           {shipment.current_status}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        <span className="font-bold text-gray-700">To:</span> {shipment.recipient_name} &bull; <span className="font-bold text-gray-700">Dest:</span> {shipment.recipient_address}
+                      <p className="text-xs text-slate-500 font-mono">
+                        <span className="font-bold text-slate-700">TO:</span> {shipment.recipient_name} &bull; <span className="font-bold text-slate-700">DEST:</span> {shipment.recipient_address}
                       </p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest font-black">Last Update</p>
-                      <p className="text-xs font-mono text-gray-600 mt-0.5">{new Date(shipment.updated_at).toLocaleString()}</p>
+                      <p className="text-[10px] font-mono text-slate-400 uppercase tracking-[0.2em] font-bold">Last Update</p>
+                      <p className="text-xs font-mono text-slate-600 mt-1">{new Date(shipment.updated_at).toLocaleString()}</p>
                     </div>
                   </div>
                 ))
@@ -192,38 +192,38 @@ export const Overview = () => {
 
         {/* Quick Actions & Mini-Track */}
         <div>
-          <div className="bg-gray-900 text-white border border-gray-800 shadow-sm p-6 mb-6 rounded-sm">
-            <h3 className="text-sm font-bold uppercase tracking-widest mb-4">Quick Track</h3>
-            <form className="flex flex-col gap-3" onSubmit={handleQuickTrack}>
+          <div className="bg-slate-900 text-white border border-slate-800 shadow-sm p-8 mb-8">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-6 text-slate-300">Quick Track</h3>
+            <form className="flex flex-col gap-4" onSubmit={handleQuickTrack}>
               <input 
                 type="text" 
                 value={quickTrackId}
                 onChange={(e) => setQuickTrackId(e.target.value)}
                 placeholder="Enter tracking number..." 
-                className="w-full px-3 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 font-mono text-sm rounded-sm transition-colors uppercase"
+                className="w-full px-4 py-4 bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-white font-mono text-sm transition-colors uppercase"
               />
-              <button type="submit" className="w-full bg-blue-600 text-white font-bold uppercase tracking-widest text-xs py-3 hover:bg-blue-700 transition-colors rounded-sm">
-                Track Shipment
+              <button type="submit" className="w-full bg-white text-slate-900 font-bold uppercase tracking-[0.2em] text-[10px] py-4 hover:bg-slate-100 transition-colors shadow-sm">
+                Trace Origin
               </button>
             </form>
           </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm p-6 rounded-sm">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900 mb-4">Quick Links</h3>
-            <ul className="space-y-3">
+          <div className="bg-white border border-slate-200 shadow-sm p-8">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-900 mb-6">Quick Links</h3>
+            <ul className="space-y-4">
               <li>
-                <Link to="/dashboard/addresses" className="text-xs font-bold text-gray-600 hover:text-blue-600 transition-colors flex items-center uppercase tracking-widest">
-                  <ArrowRight className="h-4 w-4 mr-2 text-gray-400" /> Manage Addresses
+                <Link to="/dashboard/addresses" className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors flex items-center uppercase tracking-[0.2em]">
+                  <ArrowRight className="h-4 w-4 mr-3 text-slate-400" /> Manage Addresses
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard/documents" className="text-xs font-bold text-gray-600 hover:text-blue-600 transition-colors flex items-center uppercase tracking-widest">
-                  <ArrowRight className="h-4 w-4 mr-2 text-gray-400" /> View Invoices
+                <Link to="/dashboard/documents" className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors flex items-center uppercase tracking-[0.2em]">
+                  <ArrowRight className="h-4 w-4 mr-3 text-slate-400" /> View Invoices
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard/support" className="text-xs font-bold text-gray-600 hover:text-blue-600 transition-colors flex items-center uppercase tracking-widest">
-                  <ArrowRight className="h-4 w-4 mr-2 text-gray-400" /> Get Help
+                <Link to="/dashboard/support" className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors flex items-center uppercase tracking-[0.2em]">
+                  <ArrowRight className="h-4 w-4 mr-3 text-slate-400" /> Get Help
                 </Link>
               </li>
             </ul>

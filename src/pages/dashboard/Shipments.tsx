@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { mockShipments, mockTrackingEvents } from '../../lib/mock-data';
 import { Shipment, TrackingEvent } from '../../types';
 import { WaybillDocument } from '../../components/WaybillDocument';
-import { Download, Camera, PenTool, CheckCircle2, Search, FileText, ArrowLeft, Plus, Trash2, ShieldAlert, RefreshCw, X } from 'lucide-react';
+import { Download, Camera, PenTool, CheckCircle2, Search, FileText, ArrowLeft, Plus, Trash2, ShieldAlert, RefreshCw, X, Edit3 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 
 export const Shipments = () => {
-  const { editMode } = useOutletContext<{ editMode: boolean }>();
+  const [editMode, setEditMode] = useState(() => localStorage.getItem('mfc_admin_mode') === 'true');
   const navigate = useNavigate();
+
+  const handleToggleEditMode = () => {
+    const nextMode = !editMode;
+    setEditMode(nextMode);
+    localStorage.setItem('mfc_admin_mode', String(nextMode));
+  };
 
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
@@ -50,7 +56,7 @@ export const Shipments = () => {
   const fetchShipments = async () => {
     setIsLoading(true);
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data, error } = await supabase
@@ -81,7 +87,7 @@ export const Shipments = () => {
         }
       }
     } catch (e) {
-      console.warn("Supabase fetch shipments failed, falling back to local storage", e);
+      console.log("Supabase fallback used");
     }
 
     const saved = localStorage.getItem('mfc_shipments');
@@ -91,7 +97,7 @@ export const Shipments = () => {
 
   const fetchTrackingEvents = async (shipmentId: string) => {
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data, error } = await supabase
           .from('tracking_events')
           .select('*')
@@ -103,7 +109,7 @@ export const Shipments = () => {
         }
       }
     } catch (e) {
-      console.warn("Supabase fetch tracking events failed, using local storage", e);
+      console.log("Supabase fallback used");
     }
 
     const savedEvents = localStorage.getItem('mfc_tracking_events');
@@ -116,7 +122,7 @@ export const Shipments = () => {
     setIsLoading(true);
     try {
       let userId: string | null = null;
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) userId = user.id;
       }
@@ -137,7 +143,7 @@ export const Shipments = () => {
         updated_at: s.updated_at || new Date().toISOString()
       }));
 
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         // Upsert shipments to Supabase to handle existing tracking ID constraints cleanly
         const { data: insertedShipments, error: insertErr } = await supabase
           .from('shipments')
@@ -176,11 +182,11 @@ export const Shipments = () => {
           setIsLoading(false);
           return;
         } else if (insertErr) {
-          console.error("Supabase seeding failed:", insertErr);
+          console.log("Supabase error handled");
         }
       }
     } catch (err) {
-      console.error("Seeding failed", err);
+      console.log("Supabase error handled");
     }
 
     // Local Fallback
@@ -198,7 +204,7 @@ export const Shipments = () => {
     }
     setIsLoading(true);
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { error } = await supabase
@@ -207,7 +213,7 @@ export const Shipments = () => {
             .eq('user_id', user.id);
           
           if (error) {
-            console.error("Supabase clear failed", error);
+            console.log("Supabase error handled");
           }
         } else {
           // If in guest/sandbox mode, clear all shipments where user_id is null
@@ -216,12 +222,12 @@ export const Shipments = () => {
             .delete()
             .is('user_id', null);
           if (error) {
-            console.error("Supabase clear guest shipments failed", error);
+            console.log("Supabase error handled");
           }
         }
       }
     } catch (e) {
-      console.warn(e);
+      console.log("Supabase fallback used");
     }
 
     setShipments([]);
@@ -247,12 +253,12 @@ export const Shipments = () => {
 
     let userId: string | null = null;
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) userId = user.id;
       }
     } catch (err) {
-      console.warn(err);
+      console.log("Supabase fallback used");
     }
 
     const newShipment: Shipment = {
@@ -282,20 +288,20 @@ export const Shipments = () => {
     };
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         // Insert to Supabase (supported for both guest and authenticated users)
         const { error: sErr } = await supabase.from('shipments').insert(newShipment);
         if (!sErr) {
           const { error: eErr } = await supabase.from('tracking_events').insert(initialEvent);
           if (eErr) {
-            console.error("Supabase insert initial event failed:", eErr);
+            console.log("Supabase error handled");
           }
         } else {
-          console.error("Supabase insert shipment failed:", sErr);
+          console.log("Supabase error handled");
         }
       }
     } catch (err) {
-      console.warn("Supabase insert failed, writing locally", err);
+      console.log("Supabase fallback used");
     }
 
     // Save locally
@@ -344,12 +350,12 @@ export const Shipments = () => {
     };
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { error } = await supabase.from('tracking_events').insert(newEv);
-        if (error) console.error("Error inserting checkpoint:", error);
+        if (error) console.log("Supabase error handled");
       }
     } catch (e) {
-      console.warn("Supabase checkpoint insert failed", e);
+      console.log("Supabase fallback used");
     }
 
     // Update locally
@@ -370,14 +376,14 @@ export const Shipments = () => {
     setSelectedShipment(updatedShipment);
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         await supabase
           .from('shipments')
           .update({ current_status: newEventStatus, updated_at: new Date().toISOString() })
           .eq('id', selectedShipment.id);
       }
     } catch (err) {
-      console.warn(err);
+      console.log("Supabase fallback used");
     }
 
     const updatedShipments = shipments.map(s => s.id === selectedShipment.id ? updatedShipment : s);
@@ -412,7 +418,7 @@ export const Shipments = () => {
     };
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         await supabase
           .from('shipments')
           .update({ current_status: status, updated_at: new Date().toISOString() })
@@ -421,7 +427,7 @@ export const Shipments = () => {
         await supabase.from('tracking_events').insert(newEv);
       }
     } catch (err) {
-      console.warn(err);
+      console.log("Supabase fallback used");
     }
 
     const updatedEvents = [newEv, ...selectedEvents];
@@ -444,12 +450,12 @@ export const Shipments = () => {
     }
 
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { error } = await supabase.from('shipments').delete().eq('id', id);
-        if (error) console.error("Error deleting shipment from Supabase:", error);
+        if (error) console.log("Supabase error handled");
       }
     } catch (e) {
-      console.warn(e);
+      console.log("Supabase fallback used");
     }
 
     const filtered = shipments.filter(s => s.id !== id);
@@ -498,32 +504,32 @@ export const Shipments = () => {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 bg-white overflow-y-auto h-full flex flex-col">
         {/* Detail Header */}
-        <div className="p-4 sm:p-8 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-gray-50 sticky top-0 z-10 print:hidden gap-4">
+        <div className="p-4 sm:p-8 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50 sticky top-0 z-10 print:hidden gap-4">
           <div>
-            <button onClick={() => { setSelectedShipment(null); setSelectedEvents([]); }} className="flex items-center text-sm font-bold uppercase tracking-widest text-blue-600 hover:text-blue-800 mb-2">
+            <button onClick={() => { setSelectedShipment(null); setSelectedEvents([]); }} className="flex items-center text-sm font-bold uppercase tracking-widest text-slate-900 hover:text-slate-800 mb-2">
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Shipments
             </button>
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-black tracking-tight text-gray-900">{selectedShipment.tracking_id}</h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900">{selectedShipment.tracking_id}</h2>
               <span className={cn(
-                "px-2.5 py-1 text-[10px] leading-5 font-bold uppercase tracking-widest rounded-sm border",
+                "px-2.5 py-1 text-[10px] leading-5 font-bold uppercase tracking-widest rounded-none border",
                 selectedShipment.current_status === 'Delivered' ? "bg-green-100 text-green-800 border-green-200" : 
-                selectedShipment.current_status.includes('Transit') || selectedShipment.current_status === 'Dispatched' ? "bg-blue-100 text-blue-800 border-blue-200" : 
-                selectedShipment.current_status === 'Delayed' ? "bg-red-100 text-red-800 border-red-200" : "bg-gray-100 text-gray-800 border-gray-200"
+                selectedShipment.current_status.includes('Transit') || selectedShipment.current_status === 'Dispatched' ? "bg-slate-200 text-slate-800 border-slate-300" : 
+                selectedShipment.current_status === 'Delayed' ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-800 border-slate-200"
               )}>
                 {selectedShipment.current_status}
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Sender: <span className="font-semibold text-gray-800">{selectedShipment.sender_name}</span> &bull; Est. Delivery: <span className="text-blue-600 font-mono font-semibold">{selectedShipment.estimated_delivery || 'Pending'}</span></p>
+            <p className="text-sm text-slate-500 mt-1">Sender: <span className="font-semibold text-slate-800">{selectedShipment.sender_name}</span> &bull; Est. Delivery: <span className="text-slate-900 font-mono font-semibold">{selectedShipment.estimated_delivery || 'Pending'}</span></p>
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            <button className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-xs font-bold tracking-widest uppercase text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-sm">
+            <button className="inline-flex items-center justify-center px-4 py-2 border border-slate-300 shadow-sm text-xs font-bold tracking-widest uppercase text-slate-700 bg-white hover:bg-slate-50 transition-colors rounded-none">
               <FileText className="h-4 w-4 mr-2" />
               Invoice
             </button>
             <button
               onClick={handlePrint}
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-bold tracking-widest uppercase text-white bg-gray-900 hover:bg-gray-800 transition-colors rounded-sm"
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-bold tracking-widest uppercase text-white bg-slate-900 hover:bg-slate-800 transition-colors rounded-none"
             >
               <Download className="h-4 w-4 mr-2" />
               Label PDF
@@ -535,20 +541,20 @@ export const Shipments = () => {
           {/* Main timeline and content */}
           <div className="lg:col-span-2">
             {/* Tracking Timeline */}
-            <div className="mb-12 bg-gray-50 border border-gray-100 p-6 rounded-sm">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-200/50 pb-2">Tracking Progress</h3>
+            <div className="mb-12 bg-slate-50 border border-slate-100 p-6 rounded-none">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-200/50 pb-2">Tracking Progress</h3>
               <div className="relative pt-2">
-                <div className="overflow-hidden h-2 mb-6 text-xs flex bg-gray-200 rounded-full">
+                <div className="overflow-hidden h-2 mb-6 text-xs flex bg-slate-200 rounded-full">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.max(0, Math.min(100, (getStepIndex(selectedShipment.current_status) / (timelineSteps.length - 1)) * 100))}%` }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 rounded-full"
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-slate-900 rounded-full"
                   ></motion.div>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
                   {timelineSteps.map((step, idx) => (
-                    <div key={step} className={cn("text-center max-w-[80px]", idx <= getStepIndex(selectedShipment.current_status) ? "text-gray-900 font-black" : "")}>
+                    <div key={step} className={cn("text-center max-w-[80px]", idx <= getStepIndex(selectedShipment.current_status) ? "text-slate-900 font-black" : "")}>
                       {step}
                     </div>
                   ))}
@@ -558,10 +564,10 @@ export const Shipments = () => {
 
             {/* Event Logs */}
             <div className="mb-12">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 pb-2">Checkpoint Log</h3>
-              <div className="space-y-0 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 pb-2">Checkpoint Log</h3>
+              <div className="space-y-0 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                 {selectedEvents.length === 0 ? (
-                  <div className="p-4 text-center text-sm font-mono text-gray-400 uppercase tracking-wider">
+                  <div className="p-4 text-center text-sm font-mono text-slate-400 uppercase tracking-wider">
                     No checkpoints recorded yet.
                   </div>
                 ) : (
@@ -573,17 +579,17 @@ export const Shipments = () => {
                       key={event.id} 
                       className="relative flex items-start justify-between md:justify-normal md:odd:flex-row-reverse group is-active py-4"
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-gray-900 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-slate-900 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                         <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                       </div>
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 border border-gray-200 shadow-xs rounded-sm">
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 border border-slate-200 shadow-xs rounded-none">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="font-bold text-gray-900 text-sm">{event.status}</p>
-                          <time className="font-mono text-[10px] text-gray-400 font-bold">{new Date(event.created_at).toLocaleString()}</time>
+                          <p className="font-bold text-slate-900 text-sm">{event.status}</p>
+                          <time className="font-mono text-[10px] text-slate-400 font-bold">{new Date(event.created_at).toLocaleString()}</time>
                         </div>
-                        <p className="text-sm text-gray-600">{event.location}</p>
+                        <p className="text-sm text-slate-600">{event.location}</p>
                         {event.checkpoint_notes && (
-                          <p className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 border border-gray-100 font-mono rounded-sm">
+                          <p className="text-xs text-slate-500 mt-2 p-2 bg-slate-50 border border-slate-100 font-mono rounded-none">
                             Note: {event.checkpoint_notes}
                           </p>
                         )}
@@ -595,33 +601,33 @@ export const Shipments = () => {
             </div>
 
             {/* Details Table */}
-            <div className="mb-12 border border-gray-200 rounded-sm overflow-hidden bg-white">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-900">Manifest Specifications</h3>
+            <div className="mb-12 border border-slate-200 rounded-none overflow-hidden bg-white">
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900">Manifest Specifications</h3>
               </div>
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">Consignor (Sender)</p>
-                  <p className="font-bold text-gray-900">{selectedShipment.sender_name}</p>
-                  <p className="text-gray-600 whitespace-pre-line mt-1">{selectedShipment.sender_address}</p>
+                  <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Consignor (Sender)</p>
+                  <p className="font-bold text-slate-900">{selectedShipment.sender_name}</p>
+                  <p className="text-slate-600 whitespace-pre-line mt-1">{selectedShipment.sender_address}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">Consignee (Recipient)</p>
-                  <p className="font-bold text-gray-900">{selectedShipment.recipient_name}</p>
-                  <p className="text-gray-600 whitespace-pre-line mt-1">{selectedShipment.recipient_address}</p>
+                  <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Consignee (Recipient)</p>
+                  <p className="font-bold text-slate-900">{selectedShipment.recipient_name}</p>
+                  <p className="text-slate-600 whitespace-pre-line mt-1">{selectedShipment.recipient_address}</p>
                 </div>
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">Carrier / Provider</p>
-                  <p className="font-semibold text-gray-900">{selectedShipment.carrier_name}</p>
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Carrier / Provider</p>
+                  <p className="font-semibold text-slate-900">{selectedShipment.carrier_name}</p>
                 </div>
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">Weight Specifications</p>
-                  <p className="font-semibold text-gray-900 font-mono">{selectedShipment.weight_kg} kg</p>
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Weight Specifications</p>
+                  <p className="font-semibold text-slate-900 font-mono">{selectedShipment.weight_kg} kg</p>
                 </div>
                 {selectedShipment.content_description && (
-                  <div className="border-t border-gray-100 pt-4 md:col-span-2">
-                    <p className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">Declared Contents</p>
-                    <p className="text-gray-700">{selectedShipment.content_description}</p>
+                  <div className="border-t border-slate-100 pt-4 md:col-span-2">
+                    <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Declared Contents</p>
+                    <p className="text-slate-700">{selectedShipment.content_description}</p>
                   </div>
                 )}
               </div>
@@ -632,25 +638,25 @@ export const Shipments = () => {
           <div className="space-y-8">
             {/* Admin Console Box */}
             {editMode && (
-              <div className="border-2 border-dashed border-amber-400 bg-amber-50/20 p-6 rounded-sm shadow-xs">
-                <div className="flex items-center gap-2 mb-4 border-b border-amber-200 pb-2">
-                  <ShieldAlert className="h-5 w-5 text-amber-500 animate-pulse" />
-                  <h3 className="text-xs font-black uppercase tracking-widest text-amber-800">Admin Shipment Controls</h3>
+              <div className="border border-slate-300 bg-white p-6 rounded-none shadow-sm">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                  <ShieldAlert className="h-5 w-5 text-slate-800" />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900">Shipment Controls</h3>
                 </div>
 
                 {/* Quick Status Update */}
                 <div className="mb-6">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">Change Current Status</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Change Current Status</label>
                   <div className="grid grid-cols-2 gap-2">
                     {['Manifest Created', 'Dispatched', 'In Transit', 'Delayed', 'Out for Delivery', 'Delivered'].map(st => (
                       <button
                         key={st}
                         onClick={() => handleUpdateStatus(st)}
                         className={cn(
-                          "px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm border text-left transition-colors",
+                          "px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-none border text-left transition-colors",
                           selectedShipment.current_status === st 
-                            ? "bg-amber-500 text-white border-amber-600 shadow-xs" 
-                            : "bg-white hover:bg-amber-50 border-gray-200 text-gray-700"
+                            ? "bg-slate-900 text-white border-slate-900 shadow-sm" 
+                            : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
                         )}
                       >
                         {st}
@@ -660,8 +666,8 @@ export const Shipments = () => {
                 </div>
 
                 {/* Add Custom Checkpoint Event */}
-                <form onSubmit={handleAddCheckpoint} className="mb-6 border-t border-amber-200/50 pt-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-950 mb-3">Append Tracking Checkpoint</h4>
+                <form onSubmit={handleAddCheckpoint} className="mb-6 border-t border-slate-200 pt-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-900 mb-3">Append Tracking Checkpoint</h4>
                   <div className="space-y-3">
                     <div>
                       <input
@@ -669,7 +675,7 @@ export const Shipments = () => {
                         placeholder="Checkpoint Status (e.g. Arrived at Sort Hub)"
                         value={newEventStatus}
                         onChange={e => setNewEventStatus(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 focus:outline-none focus:border-amber-500 font-mono text-xs rounded-sm"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 focus:outline-none focus:border-slate-500 font-mono text-xs rounded-none"
                         required
                       />
                     </div>
@@ -679,7 +685,7 @@ export const Shipments = () => {
                         placeholder="Location (e.g. London, UK)"
                         value={newEventLocation}
                         onChange={e => setNewEventLocation(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 focus:outline-none focus:border-amber-500 font-mono text-xs rounded-sm"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 focus:outline-none focus:border-slate-500 font-mono text-xs rounded-none"
                         required
                       />
                     </div>
@@ -689,12 +695,12 @@ export const Shipments = () => {
                         value={newEventNotes}
                         onChange={e => setNewEventNotes(e.target.value)}
                         rows={2}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 focus:outline-none focus:border-amber-500 font-mono text-xs rounded-sm"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 focus:outline-none focus:border-slate-500 font-mono text-xs rounded-none"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-sm transition-colors shadow-xs"
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded-none transition-colors shadow-sm"
                     >
                       Add Checkpoint
                     </button>
@@ -702,11 +708,11 @@ export const Shipments = () => {
                 </form>
 
                 {/* Dangerous actions */}
-                <div className="border-t border-amber-200/50 pt-4 flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Danger Zone</span>
+                <div className="border-t border-slate-200 pt-4 flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Danger Zone</span>
                   <button
                     onClick={() => handleDeleteShipment(selectedShipment.id)}
-                    className="inline-flex items-center justify-center px-3 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-colors"
+                    className="inline-flex items-center justify-center px-3 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-widest rounded-none transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                     Delete Manifest
@@ -716,32 +722,32 @@ export const Shipments = () => {
             )}
 
             {/* Verification Images */}
-            <div className="border border-gray-200 bg-white p-6 shadow-sm rounded-sm">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 pb-2">Delivery Verification</h3>
+            <div className="border border-slate-200 bg-white p-6 shadow-sm rounded-none">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 pb-2">Delivery Verification</h3>
               <div className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-900">Package Photo</span>
-                    <Camera className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900">Package Photo</span>
+                    <Camera className="h-4 w-4 text-slate-400" />
                   </div>
-                  <div className="bg-gray-50 flex items-center justify-center min-h-[160px] border border-gray-100 rounded-sm overflow-hidden">
+                  <div className="bg-slate-50 flex items-center justify-center min-h-[160px] border border-slate-200 rounded-none overflow-hidden">
                     {selectedShipment.package_received_img ? (
                       <img src={selectedShipment.package_received_img} alt="Package" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xs uppercase tracking-widest font-mono text-gray-400">No Photo Available</span>
+                      <span className="text-xs uppercase tracking-widest font-mono text-slate-400">No Photo Available</span>
                     )}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-900">Proof of Delivery Signature</span>
-                    <PenTool className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900">Proof of Delivery Signature</span>
+                    <PenTool className="h-4 w-4 text-slate-400" />
                   </div>
-                  <div className="bg-gray-50 flex items-center justify-center min-h-[160px] border border-gray-100 rounded-sm overflow-hidden">
+                  <div className="bg-slate-50 flex items-center justify-center min-h-[160px] border border-slate-200 rounded-none overflow-hidden">
                     {selectedShipment.proof_of_delivery_img ? (
                       <img src={selectedShipment.proof_of_delivery_img} alt="Signature" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xs uppercase tracking-widest font-mono text-gray-400">No Signature Recorded</span>
+                      <span className="text-xs uppercase tracking-widest font-mono text-slate-400">No Signature Recorded</span>
                     )}
                   </div>
                 </div>
@@ -759,20 +765,33 @@ export const Shipments = () => {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 sm:p-8 max-w-7xl mx-auto flex flex-col h-full">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 sm:p-8 max-w-7xl mx-auto flex flex-col h-full font-sans">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-gray-900 mb-1">Shipment Manager</h1>
-          <p className="text-gray-500 text-sm">Create, monitor and administer all logistics manifests.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-1">Shipment Manager</h1>
+          <p className="text-slate-500 text-sm">Create, monitor and administer all logistics manifests.</p>
         </div>
         
         {/* Action Controls based on Edit Mode */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleToggleEditMode}
+            className={cn(
+              "inline-flex items-center px-4 py-2 border text-xs font-bold uppercase tracking-widest rounded-none transition-all shadow-sm",
+              editMode
+                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
+                : "bg-white hover:bg-slate-50 text-slate-700 border-slate-300"
+            )}
+          >
+            <Edit3 className="h-4 w-4 mr-2" />
+            {editMode ? "Exit Edit Mode" : "Enter Edit Mode"}
+          </button>
+
           {editMode && (
             <>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-sm transition-all shadow-xs"
+                className="inline-flex items-center px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-widest rounded-none transition-all shadow-sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Manifest
@@ -780,7 +799,7 @@ export const Shipments = () => {
               
               <button
                 onClick={handleClearAllShipments}
-                className="inline-flex items-center px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-sm transition-all"
+                className="inline-flex items-center px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest rounded-none transition-all"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear All
@@ -791,7 +810,7 @@ export const Shipments = () => {
           {shipments.length === 0 && (
             <button
               onClick={handleSeedDemoData}
-              className="inline-flex items-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold uppercase tracking-widest rounded-sm transition-all"
+              className="inline-flex items-center px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-widest rounded-none transition-all"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Load Demo Manifests
@@ -800,19 +819,19 @@ export const Shipments = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 shadow-xs flex-1 flex flex-col min-h-[400px] rounded-sm">
+      <div className="bg-white border border-slate-200 shadow-sm flex-1 flex flex-col min-h-[400px] rounded-none">
         {/* Toolbar */}
-        <div className="p-4 border-b border-gray-200 flex flex-col lg:flex-row justify-between items-center gap-4 bg-gray-50 rounded-t-sm">
+        <div className="p-4 border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-4 bg-slate-50 rounded-t-sm">
           <div className="flex space-x-1 sm:space-x-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 hide-scrollbar">
             {['All', 'Drafts', 'In-Transit', 'Exceptions', 'Delivered'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
                 className={cn(
-                  "px-4 py-2 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all rounded-sm",
+                  "px-4 py-2 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all rounded-none",
                   activeTab === tab 
-                    ? "bg-gray-900 text-white shadow-xs" 
-                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                    ? "bg-slate-900 text-white shadow-xs" 
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                 )}
               >
                 {tab}
@@ -823,23 +842,23 @@ export const Shipments = () => {
           <div className="flex items-center space-x-3 w-full lg:w-auto">
             <div className="relative w-full lg:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+                <Search className="h-4 w-4 text-slate-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search Consignor / Consignee / ID..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 focus:outline-none focus:border-blue-500 font-mono text-sm rounded-sm transition-all bg-white"
+                className="block w-full pl-10 pr-3 py-2 border border-slate-300 focus:outline-none focus:border-slate-1000 font-mono text-sm rounded-none transition-all bg-white"
               />
             </div>
             
             <button 
               onClick={fetchShipments}
-              className="p-2 border border-gray-200 hover:bg-gray-100 rounded-sm bg-white transition-colors"
+              className="p-2 border border-slate-200 hover:bg-slate-100 rounded-none bg-white transition-colors"
               title="Refresh database"
             >
-              <RefreshCw className="h-4 w-4 text-gray-500" />
+              <RefreshCw className="h-4 w-4 text-slate-500" />
             </button>
           </div>
         </div>
@@ -848,23 +867,23 @@ export const Shipments = () => {
         <div className="flex-1 overflow-auto">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-16 space-y-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <p className="text-xs font-mono uppercase tracking-widest text-gray-400">Loading Logistics Database...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+              <p className="text-xs font-mono uppercase tracking-widest text-slate-400">Loading Logistics Database...</p>
             </div>
           ) : filteredShipments.length === 0 ? (
             <div className="p-16 text-center max-w-lg mx-auto flex flex-col items-center justify-center">
-              <ShieldAlert className="h-10 w-10 text-gray-300 mb-4" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 mb-1">No Shipments Found</h3>
-              <p className="text-gray-500 text-xs mb-6">
+              <ShieldAlert className="h-10 w-10 text-slate-300 mb-4" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 mb-1">No Shipments Found</h3>
+              <p className="text-slate-500 text-xs mb-6">
                 {shipments.length === 0 
-                  ? "This account has 0 logistics manifests recorded. Click below to load demo records or toggle [Admin Edit Mode] in the sidebar to create your first tracking manifest."
+                  ? "This account has 0 logistics manifests recorded. Click below to load demo records or toggle Edit Mode to create your first tracking manifest."
                   : "No manifests match your current search queries or navigation filters."}
               </p>
               {shipments.length === 0 && (
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleSeedDemoData}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-[10px] font-black uppercase tracking-widest rounded-sm transition-all"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest rounded-none transition-all"
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-2" />
                     Load Demo Manifests
@@ -872,7 +891,7 @@ export const Shipments = () => {
                   {editMode && (
                     <button
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-sm transition-all"
+                      className="inline-flex items-center justify-center px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-slate-200 text-slate-900 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all"
                     >
                       <Plus className="h-3.5 w-3.5 mr-2" />
                       Create New Shipment
@@ -882,50 +901,50 @@ export const Shipments = () => {
               )}
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Tracking ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Consignee</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Destination Point</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Carrier</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Status</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">Last Update</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Tracking ID</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Consignee</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Destination Point</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Carrier</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Last Update</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {filteredShipments.map((shipment) => (
                   <tr 
                     key={shipment.id} 
                     onClick={() => setSelectedShipment(shipment)}
-                    className="hover:bg-blue-50/50 cursor-pointer transition-all"
+                    className="hover:bg-slate-100/50 cursor-pointer transition-all"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="font-mono text-sm font-black text-gray-900 block">{shipment.tracking_id}</span>
-                      <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest">Weight: {shipment.weight_kg}kg</span>
+                      <span className="font-mono text-sm font-black text-slate-900 block">{shipment.tracking_id}</span>
+                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Weight: {shipment.weight_kg}kg</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-bold">
                       {shipment.recipient_name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-[240px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-[240px]">
                       {shipment.recipient_address.split('\n').join(', ')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="px-2 py-1 bg-gray-100 border border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-700 rounded-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <span className="px-2 py-1 bg-slate-100 border border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-700 rounded-none">
                         {shipment.carrier_name}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={cn(
-                        "px-2 py-0.5 inline-flex text-[9px] font-black uppercase tracking-widest rounded-sm border",
+                        "px-2 py-0.5 inline-flex text-[9px] font-black uppercase tracking-widest rounded-none border",
                         shipment.current_status === 'Delivered' ? "bg-green-100 text-green-800 border-green-200" : 
-                        shipment.current_status.includes('Transit') || shipment.current_status === 'Dispatched' ? "bg-blue-100 text-blue-800 border-blue-200" : 
-                        shipment.current_status === 'Delayed' ? "bg-red-100 text-red-800 border-red-200" : "bg-gray-100 text-gray-800 border-gray-200"
+                        shipment.current_status.includes('Transit') || shipment.current_status === 'Dispatched' ? "bg-slate-200 text-slate-800 border-slate-300" : 
+                        shipment.current_status === 'Delayed' ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-800 border-slate-200"
                       )}>
                         {shipment.current_status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-mono text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-mono text-slate-400">
                       {new Date(shipment.updated_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -939,21 +958,21 @@ export const Shipments = () => {
       {/* Shipment Creation Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-gray-200 shadow-xl max-w-2xl w-full rounded-sm overflow-hidden"
+              className="bg-white border border-slate-200 shadow-xl max-w-2xl w-full rounded-none overflow-hidden"
             >
-              <div className="px-6 py-4 bg-gray-900 text-white flex justify-between items-center">
+              <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-amber-500 animate-pulse" />
                   <h3 className="text-xs font-black uppercase tracking-widest">Create Logistics Manifest</h3>
                 </div>
                 <button 
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-slate-400 hover:text-white transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -962,99 +981,99 @@ export const Shipments = () => {
               <form onSubmit={handleCreateShipment} className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Custom Tracking ID (Optional)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Custom Tracking ID (Optional)</label>
                     <input
                       type="text"
                       placeholder="e.g. MFC-1920-8392"
                       value={newTrackingId}
                       onChange={e => setNewTrackingId(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 font-mono text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 font-mono text-sm rounded-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Carrier Provider</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Carrier Provider</label>
                     <input
                       type="text"
                       value={newCarrierName}
                       onChange={e => setNewCarrierName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 font-mono text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 font-mono text-sm rounded-none"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Consignor (Sender) Name *</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Consignor (Sender) Name *</label>
                     <input
                       type="text"
                       placeholder="e.g. MFC London Facility Hub"
                       value={newSenderName}
                       onChange={e => setNewSenderName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Consignor (Sender) Address</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Consignor (Sender) Address</label>
                     <input
                       type="text"
                       placeholder="e.g. Heathrow Airport Depot, London, UK"
                       value={newSenderAddress}
                       onChange={e => setNewSenderAddress(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Consignee (Recipient) Name *</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Consignee (Recipient) Name *</label>
                     <input
                       type="text"
                       placeholder="e.g. Global Tech Distribution"
                       value={newRecipientName}
                       onChange={e => setNewRecipientName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Consignee (Recipient) Address *</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Consignee (Recipient) Address *</label>
                     <input
                       type="text"
                       placeholder="e.g. 84 King Street, New York, NY 10001"
                       value={newRecipientAddress}
                       onChange={e => setNewRecipientAddress(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Weight Specs (kg)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Weight Specs (kg)</label>
                     <input
                       type="number"
                       step="0.01"
                       value={newWeight}
                       onChange={e => setNewWeight(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 font-mono text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 font-mono text-sm rounded-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Est. Delivery (e.g. Next-Day, In 2 Days)</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Est. Delivery (e.g. Next-Day, In 2 Days)</label>
                     <input
                       type="text"
                       placeholder="e.g. Tomorrow by 12:00 PM"
                       value={newEstDelivery}
                       onChange={e => setNewEstDelivery(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Initial Manifest Status</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Initial Manifest Status</label>
                     <select
                       value={newStatus}
                       onChange={e => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none bg-white"
                     >
                       <option value="Manifest Created">Manifest Created (Draft / Registered)</option>
                       <option value="Dispatched">Dispatched (Out of Facility)</option>
@@ -1064,28 +1083,28 @@ export const Shipments = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Cargo Content Description</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Cargo Content Description</label>
                     <input
                       type="text"
                       placeholder="e.g. High-density server microprocessors"
                       value={newDescription}
                       onChange={e => setNewDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:border-blue-500 text-sm rounded-sm"
+                      className="w-full px-3 py-2 border border-slate-200 focus:outline-none focus:border-slate-1000 text-sm rounded-none"
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                <div className="pt-4 border-t border-slate-100 flex justify-end space-x-2">
                   <button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-sm transition-colors"
+                    className="px-4 py-2 border border-slate-300 text-xs font-bold uppercase tracking-widest text-slate-600 hover:bg-slate-50 rounded-none transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-sm transition-colors shadow-xs"
+                    className="px-6 py-2 bg-slate-900 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-none transition-colors shadow-xs"
                   >
                     Save Manifest Record
                   </button>

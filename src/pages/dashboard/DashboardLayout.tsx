@@ -1,22 +1,13 @@
 import React, { useState } from 'react';
-import { Package, MapPin, LifeBuoy, LogOut, Menu, X, LayoutDashboard, FileText, FileSpreadsheet, ShieldAlert, Search } from 'lucide-react';
+import { Package, MapPin, LifeBuoy, LogOut, Menu, X, LayoutDashboard, FileText, FileSpreadsheet, Search } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { mockProfile } from '../../lib/mock-data';
 
 export const DashboardLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [editMode, setEditMode] = useState(() => {
-    return localStorage.getItem('mfc_admin_mode') === 'true';
-  });
   const location = useLocation();
   const navigate = useNavigate();
-
-  const handleToggleEditMode = () => {
-    const nextMode = !editMode;
-    setEditMode(nextMode);
-    localStorage.setItem('mfc_admin_mode', String(nextMode));
-  };
 
   const navItems = [
     { name: 'Dashboard Overview', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -33,18 +24,18 @@ export const DashboardLayout = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <div className="h-screen flex overflow-hidden bg-slate-50 font-sans">
       {/* Mobile Header Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-30">
         <div className="flex flex-col">
-          <span className="font-black text-sm tracking-widest text-gray-900 uppercase">
+          <span className="font-bold text-sm tracking-tight text-slate-900">
             MFC Enterprise
           </span>
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Console</span>
+          <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">Console</span>
         </div>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 border border-gray-200 rounded-sm text-gray-600 hover:text-gray-900 bg-gray-50 transition-colors"
+          className="p-2 border border-slate-200 rounded-none text-slate-600 hover:text-slate-900 bg-slate-50 transition-colors shadow-sm"
         >
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -53,23 +44,23 @@ export const DashboardLayout = () => {
       {/* Mobile Backdrop Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs z-35 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-35 lg:hidden transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col shadow-xl lg:shadow-none",
+        "fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col shadow-xl lg:shadow-none",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-6 mb-8">
             <div>
-              <span className="font-black text-xl tracking-widest text-gray-900 uppercase block">
+              <span className="font-bold text-xl tracking-tight text-slate-900 block">
                 MFC Enterprise
               </span>
-              <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Logistics Manager Console</span>
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">Logistics Console</span>
             </div>
           </div>
           
@@ -81,60 +72,35 @@ export const DashboardLayout = () => {
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    "group flex items-center px-3 py-3 text-sm font-medium transition-colors rounded-sm",
+                    "group flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-none",
                     isActive 
-                      ? "bg-gray-900 text-white shadow-sm" 
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-slate-900 text-white shadow-sm" 
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className={cn("mr-3", isActive ? "text-white" : "text-gray-400 group-hover:text-gray-500")}>
+                  <span className={cn("mr-3", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-500")}>
                     {item.icon}
                   </span>
                   {item.name}
                 </Link>
               );
             })}
-
-            {/* Admin Controls Toggle */}
-            <div className="pt-4 mt-4 border-t border-gray-200">
-              <span className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Sandbox Controls</span>
-              <button
-                onClick={handleToggleEditMode}
-                className={cn(
-                  "w-full group flex items-center justify-between px-3 py-3 text-sm font-bold transition-all rounded-sm border border-dashed",
-                  editMode 
-                    ? "bg-amber-500/10 text-amber-600 border-amber-500 hover:bg-amber-500/20" 
-                    : "bg-gray-50 text-gray-500 border-gray-300 hover:bg-gray-100"
-                )}
-              >
-                <div className="flex items-center">
-                  <ShieldAlert className={cn("mr-3 h-5 w-5", editMode ? "text-amber-500 animate-pulse" : "text-gray-400")} />
-                  <span>Admin Edit Mode</span>
-                </div>
-                <span className={cn(
-                  "px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full",
-                  editMode ? "bg-amber-500 text-white animate-pulse" : "bg-gray-200 text-gray-600"
-                )}>
-                  {editMode ? 'ON' : 'OFF'}
-                </span>
-              </button>
-            </div>
           </nav>
         </div>
         
-        <div className="flex-shrink-0 border-t border-gray-200 p-4 bg-gray-50">
-          <div className="flex items-center px-3 py-2 mb-4 bg-white border border-gray-200 shadow-sm p-3">
+        <div className="flex-shrink-0 border-t border-slate-200 p-4 bg-slate-50">
+          <div className="flex items-center px-3 py-3 mb-4 bg-white border border-slate-200 shadow-sm rounded-none">
             <div>
-              <p className="text-sm font-bold text-gray-900 truncate">{mockProfile.company_name || mockProfile.full_name}</p>
-              <p className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-0.5">{mockProfile.tier_level} Tier</p>
+              <p className="text-sm font-bold text-slate-900 truncate">{mockProfile.company_name || mockProfile.full_name}</p>
+              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em] mt-1">{mockProfile.tier_level} Tier</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-colors rounded-sm"
+            className="flex items-center justify-center w-full px-4 py-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors rounded-none border border-transparent"
           >
-            <LogOut className="mr-3 h-5 w-5 text-gray-400" />
+            <LogOut className="mr-3 h-4 w-4 text-slate-400" />
             Sign Out Session
           </button>
         </div>
@@ -143,7 +109,7 @@ export const DashboardLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-0 overflow-hidden">
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none lg:pt-0 pt-16">
-          <Outlet context={{ editMode, setEditMode }} />
+          <Outlet />
         </main>
       </div>
     </div>

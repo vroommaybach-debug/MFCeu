@@ -18,37 +18,37 @@ export const Navbar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="border-b border-gray-200 bg-white sticky top-0 z-50 font-sans shadow-sm">
+    <nav className="border-b border-slate-200 bg-white sticky top-0 z-50 font-sans shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center group">
-              <Truck className="h-6 w-6 text-blue-600 mr-2 group-hover:text-blue-700 transition-colors" />
-              <span className="font-black text-xl tracking-tight text-gray-900 uppercase">
-                MAJOR Freight Courier
+              <Truck className="h-6 w-6 text-slate-900 mr-2 group-hover:text-slate-700 transition-colors" />
+              <span className="font-bold text-lg tracking-tight text-slate-900 uppercase">
+                MAJOR Freight
               </span>
             </Link>
           </div>
           
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-10">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
                 className={cn(
-                  "text-[10px] uppercase font-bold transition-colors tracking-widest relative py-2",
-                  isActive(link.path) ? "text-blue-600" : "text-gray-500 hover:text-gray-900"
+                  "text-[10px] uppercase font-bold transition-colors tracking-[0.2em] relative py-2",
+                  isActive(link.path) ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 {link.name}
                 {isActive(link.path) && (
-                  <motion.div layoutId="navbar-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                  <motion.div layoutId="navbar-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900" />
                 )}
               </Link>
             ))}
             <Link
               to="/login"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-xs font-bold tracking-widest uppercase rounded-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center px-8 py-3 border border-slate-900 text-[10px] font-bold tracking-[0.2em] uppercase rounded-none text-white bg-slate-900 hover:bg-white hover:text-slate-900 transition-colors shadow-sm"
             >
               Sign In
             </Link>
@@ -57,7 +57,7 @@ export const Navbar = () => {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-gray-900 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-slate-900 focus:outline-none"
             >
               {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
             </button>
@@ -72,7 +72,7 @@ export const Navbar = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-gray-200 bg-gray-50 absolute w-full z-40 shadow-xl overflow-hidden"
+            className="md:hidden border-t border-slate-200 bg-slate-50 absolute w-full z-40 shadow-xl overflow-hidden"
           >
             <div className="pt-2 pb-6 space-y-1 px-4">
               {navLinks.map((link) => (
@@ -80,10 +80,10 @@ export const Navbar = () => {
                   key={link.name}
                   to={link.path}
                   className={cn(
-                    "block py-4 text-xs font-bold uppercase tracking-widest border-b border-gray-200 transition-colors",
+                    "block py-4 text-xs font-bold uppercase tracking-[0.2em] border-b border-slate-200 transition-colors",
                     isActive(link.path)
-                      ? "text-blue-600 border-blue-200"
-                      : "text-gray-500 hover:text-gray-900"
+                      ? "text-slate-900 border-slate-900"
+                      : "text-slate-500 hover:text-slate-900"
                   )}
                   onClick={() => setIsOpen(false)}
                 >
@@ -92,7 +92,7 @@ export const Navbar = () => {
               ))}
               <Link
                 to="/login"
-                className="block mt-6 text-center w-full py-4 text-xs font-bold uppercase tracking-widest bg-blue-600 text-white rounded-sm shadow-sm"
+                className="block mt-6 text-center w-full py-4 text-xs font-bold uppercase tracking-[0.2em] bg-slate-900 text-white border border-slate-900 rounded-none shadow-sm hover:bg-white hover:text-slate-900 transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 Sign In

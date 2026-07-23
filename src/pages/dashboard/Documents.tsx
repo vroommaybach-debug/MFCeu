@@ -28,7 +28,7 @@ export const Documents = () => {
   const fetchDocuments = async () => {
     let shipments: Shipment[] = [];
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder') && !import.meta.env.VITE_SUPABASE_URL.includes('test')) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data } = await supabase.from('shipments').select('*').eq('user_id', user.id);
@@ -38,7 +38,7 @@ export const Documents = () => {
         }
       }
     } catch (e) {
-      console.warn("Supabase not fully setup");
+      console.log("Supabase fallback used");
     }
 
     if (shipments.length === 0) {

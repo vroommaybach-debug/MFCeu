@@ -93,15 +93,15 @@ export const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
       <Navbar />
       
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full overflow-hidden">
         <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="text-center max-w-3xl mx-auto mb-20">
-          <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-6">
+          <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-6">
             Institutional Tariffs & Pricing.
           </motion.h1>
-          <motion.p variants={fadeUp} className="text-lg text-gray-500 leading-relaxed">
+          <motion.p variants={fadeUp} className="text-lg text-slate-500 leading-relaxed">
             Volume-driven pricing structures tailored for cross-border operations. Calculated by Freight Class and Dimensional Weight (DIM).
           </motion.p>
         </motion.div>
@@ -113,42 +113,42 @@ export const Pricing = () => {
               variants={fadeUp}
               key={i} 
               className={cn(
-                "relative p-8 border bg-white flex flex-col transition-all",
-                plan.isPopular ? "border-blue-600 shadow-xl scale-100 lg:scale-105 z-10" : "border-gray-200 hover:border-gray-300"
+                "relative p-10 border bg-white flex flex-col transition-all",
+                plan.isPopular ? "border-slate-900 shadow-xl scale-100 lg:scale-105 z-10" : "border-slate-200 hover:border-slate-300 shadow-sm"
               )}
             >
               {plan.isPopular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full shadow-md shadow-blue-600/20">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-white px-6 py-2 text-[10px] font-bold tracking-[0.2em] uppercase shadow-md">
                   Most Active Volume
                 </div>
               )}
               
               <div className="mb-8 mt-2">
-                <h3 className="text-2xl font-black tracking-tight text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed h-10">{plan.subtext}</p>
+                <h3 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">{plan.name}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed h-10">{plan.subtext}</p>
               </div>
               
-              <div className="mb-8 pb-8 border-b border-gray-100">
+              <div className="mb-8 pb-8 border-b border-slate-100">
                 <div className="flex items-baseline">
-                  <span className="text-6xl font-black tracking-tighter text-gray-900">{plan.discount}</span>
-                  <span className="text-xs font-bold text-gray-500 ml-2 uppercase tracking-widest">Off Retail Tariff</span>
+                  <span className="text-6xl font-bold tracking-tighter text-slate-900">{plan.discount}</span>
+                  <span className="text-[10px] font-bold text-slate-400 ml-3 uppercase tracking-[0.2em]">Off Retail Tariff</span>
                 </div>
               </div>
               
-              <ul className="space-y-4 mb-8 flex-1">
+              <ul className="space-y-4 mb-10 flex-1">
                 {plan.features.map((feat, j) => (
                   <li key={j} className="flex items-start">
-                    <Check className="h-5 w-5 text-blue-600 mr-3 shrink-0" />
-                    <span className="text-sm text-gray-600">{feat}</span>
+                    <Check className="h-5 w-5 text-slate-900 mr-4 shrink-0" />
+                    <span className="text-sm text-slate-600 leading-relaxed">{feat}</span>
                   </li>
                 ))}
               </ul>
               
               <button className={cn(
-                "w-full py-4 text-xs font-bold tracking-widest uppercase transition-colors rounded-xl",
+                "w-full py-4 text-xs font-bold tracking-[0.2em] uppercase transition-colors rounded-none",
                 plan.isPopular 
-                  ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20" 
-                  : "bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200"
+                  ? "bg-slate-900 text-white hover:bg-slate-800 shadow-md" 
+                  : "bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200"
               )}>
                 Request Account Tier
               </button>
@@ -158,26 +158,26 @@ export const Pricing = () => {
 
         {/* Footer Accordion Panel */}
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-black tracking-tight text-gray-900 mb-8 border-b border-gray-200 pb-4">Operational Parameters (FAQ)</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 mb-8 border-b border-slate-200 pb-4">Operational Parameters (FAQ)</h2>
           <div className="space-y-4">
             {faqs.map((faq, i) => (
               <motion.div 
                 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                key={i} className="border border-gray-200 bg-white rounded-xl overflow-hidden shadow-sm"
+                key={i} className="border border-slate-200 bg-white overflow-hidden shadow-sm rounded-none"
               >
                 <button 
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none hover:bg-slate-50 transition-colors"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 >
-                  <span className="font-bold text-gray-900 tracking-tight text-sm pr-4">{faq.q}</span>
+                  <span className="font-bold text-slate-900 tracking-tight text-sm pr-4">{faq.q}</span>
                   {openFaq === i ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400 shrink-0" />
+                    <ChevronUp className="h-5 w-5 text-slate-400 shrink-0" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-400 shrink-0" />
+                    <ChevronDown className="h-5 w-5 text-slate-400 shrink-0" />
                   )}
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-6 pt-0 text-sm text-gray-600 leading-relaxed border-t border-gray-100 mt-2">
+                  <div className="px-6 pb-6 pt-0 text-sm text-slate-600 leading-relaxed border-t border-slate-100 mt-2 bg-slate-50">
                     <div className="pt-4">{faq.a}</div>
                   </div>
                 )}
